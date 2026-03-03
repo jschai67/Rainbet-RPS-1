@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>RainBet RPS Analyzer</title>
+<link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;600;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0e1628;
+  --bg2: #111d35;
+  --panel: #162040;
+  --panel2: #1a2748;
+  --border: #243358;
+  --accent: #4a7fff;
+  --accent2: #6b9fff;
+  --accent-glow: rgba(74,127,255,0.35);
+  --gold: #f0c040;
+  --gold-glow: rgba(240,192,64,0.3);
+  --win: #3ddc84;
+  --lose: #ff5a5a;
+  --tie: #8899bb;
+  --text: #e8edf8;
+  --muted: #6677aa;
+  --rock: #e07a5f;
+  --paper: #81b0e8;
+  --scissors: #f2cc6b;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Exo 2', sans-serif;
+  min-height: 100vh;
+  padding: 0 0 60px;
+}
+
+/* Background circuit/grid */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(74,127,255,0.12) 0%, transparent 60%),
+    linear-gradient(rgba(74,127,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(74,127,255,0.03) 1px, transparent 1px);
+  background-size: 100% 100%, 40px 40px, 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.app { position: relative; z-index: 1; max-width: 960px; margin: 0 auto; padding: 0 16px; }
+
+/* ── HEADER ── */
+header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 36px 0 28px;
+  gap: 12px;
+}
+
+.logo-area {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.logo-icon {
+  width: 72px; height: 72px;
+  background: linear-gradient(145deg, #1e3060, #2a4080);
+  border: 2px solid var(--accent);
+  border-radius: 16px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2.2rem;
+  box-shadow: 0 0 30px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.logo-icon::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(74,127,255,0.2), transparent);
+}
+
+.logo-text h1 {
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: var(--text);
+  line-height: 1;
+}
+
+.logo-text .sub {
+  font-size: 0.75rem;
+  letter-spacing: 0.35em;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+.rainbet-badge {
+  background: linear-gradient(135deg, var(--accent), #2255cc);
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  padding: 4px 12px;
+  border-radius: 20px;
+  text-transform: uppercase;
+}
+
+/* ── DATA PHASE BANNER ── */
+.phase-banner {
+  background: linear-gradient(135deg, var(--panel), var(--panel2));
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--gold);
+  border-radius: 10px;
+  padding: 14px 20px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.phase-icon { font-size: 1.5rem; }
+
+.phase-info { flex: 1; }
+.phase-title { font-weight: 700; font-size: 0.95rem; color: var(--gold); letter-spacing: 0.05em; }
+.phase-desc { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+
+.phase-progress {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+  min-width: 120px;
+}
+
+.phase-rounds { font-family: 'Share Tech Mono', monospace; font-size: 1rem; color: var(--text); }
+.phase-bar-bg { width: 120px; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.phase-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--gold)); border-radius: 3px; transition: width 0.5s ease; }
+
+/* ── PREDICTION BOX ── */
+.prediction-box {
+  background: linear-gradient(145deg, var(--panel), var(--panel2));
+  border: 1px solid var(--accent);
+  border-radius: 14px;
+  padding: 28px 24px;
+  margin-bottom: 20px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 40px var(--accent-glow);
+}
+
+.prediction-box::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), var(--accent2), transparent);
+}
+
+.pred-label {
+  font-size: 0.65rem;
+  letter-spacing: 0.4em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+.pred-moves {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.pred-move-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.pred-move-emoji {
+  font-size: 3.5rem;
+  filter: drop-shadow(0 0 12px rgba(74,127,255,0.4));
+  transition: all 0.3s;
+}
+
+.pred-move-name {
+  font-size: 0.7rem;
+  letter-spacing: 0.25em;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.pred-arrow { font-size: 1.8rem; color: var(--muted); }
+
+.pred-move-card.recommended .pred-move-emoji {
+  filter: drop-shadow(0 0 20px var(--gold));
+  animation: pulse-glow 2s infinite;
+}
+
+.pred-move-card.recommended .pred-move-name { color: var(--gold); }
+
+@keyframes pulse-glow {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+.pred-confidence-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 400px;
+  margin: 0 auto 10px;
+}
+
+.conf-label { font-size: 0.75rem; color: var(--muted); white-space: nowrap; }
+.conf-bar-bg { flex: 1; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+.conf-bar-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--accent), var(--gold)); transition: width 0.5s ease; }
+.conf-pct { font-family: 'Share Tech Mono', monospace; font-size: 0.85rem; color: var(--gold); min-width: 36px; }
+
+.pred-detail { font-size: 0.8rem; color: var(--muted); }
+.pred-detail span { color: var(--accent2); }
+
+.trust-badge {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.trust-low { background: rgba(255,90,90,0.15); color: var(--lose); border: 1px solid rgba(255,90,90,0.3); }
+.trust-med { background: rgba(240,192,64,0.15); color: var(--gold); border: 1px solid rgba(240,192,64,0.3); }
+.trust-high { background: rgba(61,220,132,0.15); color: var(--win); border: 1px solid rgba(61,220,132,0.3); }
+
+/* ── INPUT SECTION ── */
+.input-section {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px;
+  margin-bottom: 20px;
+}
+
+.section-title {
+  font-size: 0.65rem;
+  letter-spacing: 0.35em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-title::before {
+  content: '';
+  display: block;
+  width: 3px; height: 14px;
+  background: var(--accent);
+  border-radius: 2px;
+}
+
+.move-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.move-btn {
+  padding: 18px 8px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel2);
+  color: var(--muted);
+  font-family: 'Exo 2', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-transform: uppercase;
+}
+
+.move-btn .emoji { font-size: 2.2rem; transition: transform 0.2s; }
+
+.move-btn:hover { transform: translateY(-3px); }
+
+.move-btn.rock:hover, .move-btn.rock.selected {
+  border-color: var(--rock); color: var(--rock);
+  background: rgba(224,122,95,0.1);
+  box-shadow: 0 4px 20px rgba(224,122,95,0.25);
+}
+.move-btn.rock:hover .emoji, .move-btn.rock.selected .emoji { transform: scale(1.15); }
+
+.move-btn.paper:hover, .move-btn.paper.selected {
+  border-color: var(--paper); color: var(--paper);
+  background: rgba(129,176,232,0.1);
+  box-shadow: 0 4px 20px rgba(129,176,232,0.25);
+}
+
+.move-btn.scissors:hover, .move-btn.scissors.selected {
+  border-color: var(--scissors); color: var(--scissors);
+  background: rgba(242,204,107,0.1);
+  box-shadow: 0 4px 20px rgba(242,204,107,0.25);
+}
+
+.outcome-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.outcome-label { font-size: 0.8rem; color: var(--muted); letter-spacing: 0.1em; }
+
+.outcome-btn {
+  padding: 9px 18px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--panel2);
+  color: var(--muted);
+  font-family: 'Exo 2', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-transform: uppercase;
+}
+
+.outcome-btn:hover.win, .outcome-btn.win.active {
+  border-color: var(--win); background: rgba(61,220,132,0.1); color: var(--win);
+}
+.outcome-btn:hover.lose, .outcome-btn.lose.active {
+  border-color: var(--lose); background: rgba(255,90,90,0.1); color: var(--lose);
+}
+.outcome-btn:hover.tie, .outcome-btn.tie.active {
+  border-color: var(--tie); background: rgba(136,153,187,0.1); color: var(--tie);
+}
+
+.log-btn {
+  margin-left: auto;
+  padding: 10px 28px;
+  border-radius: 8px;
+  border: none;
+  background: linear-gradient(135deg, var(--accent), #2255dd);
+  color: white;
+  font-family: 'Exo 2', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 16px var(--accent-glow);
+}
+
+.log-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px var(--accent-glow);
+}
+
+.log-btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; box-shadow: none; }
+
+/* ── STATS GRID ── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.stat-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+}
+
+/* Win rate card */
+.winrate-big {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 3rem;
+  font-weight: 400;
+  color: var(--win);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.winrate-sub { font-size: 0.78rem; color: var(--muted); margin-bottom: 14px; }
+
+.wlt-row { display: flex; gap: 20px; }
+.wlt-item { text-align: center; }
+.wlt-val { font-family: 'Share Tech Mono', monospace; font-size: 1.3rem; }
+.wlt-lab { font-size: 0.65rem; color: var(--muted); letter-spacing: 0.2em; text-transform: uppercase; margin-top: 2px; }
+.wlt-item.w .wlt-val { color: var(--win); }
+.wlt-item.l .wlt-val { color: var(--lose); }
+.wlt-item.t .wlt-val { color: var(--tie); }
+
+/* Freq bars */
+.freq-bars { display: flex; flex-direction: column; gap: 12px; }
+.freq-row { display: flex; align-items: center; gap: 10px; }
+.freq-emoji { font-size: 1.2rem; width: 28px; text-align: center; }
+.freq-label { width: 68px; font-size: 0.8rem; font-weight: 600; }
+.freq-label.rock { color: var(--rock); }
+.freq-label.paper { color: var(--paper); }
+.freq-label.scissors { color: var(--scissors); }
+.freq-bar-bg { flex: 1; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+.freq-bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+.freq-bar-fill.rock { background: var(--rock); }
+.freq-bar-fill.paper { background: var(--paper); }
+.freq-bar-fill.scissors { background: var(--scissors); }
+.freq-pct { width: 38px; text-align: right; font-family: 'Share Tech Mono', monospace; font-size: 0.8rem; color: var(--muted); }
+
+/* Chi-square card */
+.chi-result {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.chi-score {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 2rem;
+  color: var(--text);
+}
+
+.chi-verdict {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.chi-verdict-text { font-size: 0.9rem; font-weight: 700; }
+.chi-verdict-sub { font-size: 0.75rem; color: var(--muted); }
+
+.pattern-random { color: var(--lose); }
+.pattern-weak { color: var(--gold); }
+.pattern-strong { color: var(--win); }
+
+.chi-bar-bg { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; margin-bottom: 8px; }
+.chi-bar-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--lose), var(--gold), var(--win)); transition: width 0.5s ease; }
+.chi-desc { font-size: 0.75rem; color: var(--muted); line-height: 1.5; }
+
+/* Streak card */
+.streak-display { display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px; }
+.streak-num { font-family: 'Share Tech Mono', monospace; font-size: 2rem; }
+.streak-move { font-size: 0.9rem; font-weight: 600; }
+.streak-warning {
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+.streak-warning.alert {
+  background: rgba(240,192,64,0.12);
+  border: 1px solid rgba(240,192,64,0.3);
+  color: var(--gold);
+}
+.streak-warning.normal {
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+
+/* Reaction patterns card */
+.reaction-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+.reaction-table th {
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  color: var(--muted);
+  padding: 5px 8px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+  text-transform: uppercase;
+}
+.reaction-table td {
+  padding: 7px 8px;
+  text-align: center;
+  border-bottom: 1px solid rgba(36,51,88,0.5);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.78rem;
+}
+.reaction-table tr:last-child td { border-bottom: none; }
+.reaction-table td:first-child { text-align: left; font-family: 'Exo 2', sans-serif; font-weight: 600; font-size: 0.8rem; }
+.cell-rock { color: var(--rock); }
+.cell-paper { color: var(--paper); }
+.cell-scissors { color: var(--scissors); }
+.cell-high { font-weight: 700; position: relative; }
+.cell-high::after { content: '●'; position: absolute; top: 2px; right: 2px; font-size: 0.4rem; color: var(--gold); }
+
+/* Markov table - full width */
+.full-card {
+  grid-column: 1 / -1;
+}
+
+/* Recency weight indicator */
+.recency-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.recency-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent);
+}
+
+/* ── HISTORY ── */
+.history-section {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.clear-btn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-family: 'Exo 2', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-transform: uppercase;
+}
+
+.clear-btn:hover { border-color: var(--lose); color: var(--lose); }
+
+.history-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 130px;
+  overflow-y: auto;
+}
+
+.history-chip {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  animation: chipIn 0.2s ease;
+}
+
+@keyframes chipIn {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.history-chip.win { background: rgba(61,220,132,0.12); color: var(--win); border: 1px solid rgba(61,220,132,0.25); }
+.history-chip.lose { background: rgba(255,90,90,0.12); color: var(--lose); border: 1px solid rgba(255,90,90,0.25); }
+.history-chip.tie { background: rgba(136,153,187,0.12); color: var(--tie); border: 1px solid rgba(136,153,187,0.25); }
+
+.empty-state { color: var(--muted); font-size: 0.85rem; text-align: center; padding: 20px; letter-spacing: 0.08em; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed;
+  bottom: 28px; left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 24px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  z-index: 100;
+  white-space: nowrap;
+}
+
+.toast.show { transform: translateX(-50%) translateY(0); }
+.toast.win-toast { border-color: var(--win); color: var(--win); }
+.toast.lose-toast { border-color: var(--lose); color: var(--lose); }
+.toast.tie-toast { border-color: var(--tie); color: var(--tie); }
+
+@media (max-width: 480px) {
+  .move-buttons { gap: 8px; }
+  .move-btn { padding: 14px 6px; font-size: 0.68rem; }
+  .move-btn .emoji { font-size: 1.8rem; }
+  .outcome-row { gap: 7px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo-area">
+      <div class="logo-icon">✊✋✌️</div>
+      <div class="logo-text">
+        <h1>RPS ANALYZER</h1>
+        <div class="sub">Pattern Intelligence System</div>
+      </div>
+    </div>
+    <div class="rainbet-badge">⚡ RAINBET EDITION</div>
+  </header>
+
+  <!-- PHASE BANNER -->
+  <div class="phase-banner">
+    <div class="phase-icon" id="phaseIcon">📊</div>
+    <div class="phase-info">
+      <div class="phase-title" id="phaseTitle">DATA COLLECTION PHASE</div>
+      <div class="phase-desc" id="phaseDesc">Play small bets and log results to train the predictor. Need 30+ rounds for reliable patterns.</div>
+    </div>
+    <div class="phase-progress">
+      <div class="phase-rounds"><span id="roundCount">0</span> / 50 rounds</div>
+      <div class="phase-bar-bg"><div class="phase-bar-fill" id="phaseBar" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <!-- PREDICTION -->
+  <div class="prediction-box">
+    <div class="pred-label">▸ recommended play this round</div>
+    <div class="pred-moves" id="predMoves">
+      <div class="pred-move-card">
+        <div class="pred-move-emoji" id="predCompEmoji">🎲</div>
+        <div class="pred-move-name" id="predCompName" style="color:var(--muted)">Computer likely</div>
+      </div>
+      <div class="pred-arrow">→</div>
+      <div class="pred-move-card recommended">
+        <div class="pred-move-emoji" id="predPlayEmoji">❓</div>
+        <div class="pred-move-name" id="predPlayName" style="color:var(--muted)">You play</div>
+      </div>
+    </div>
+    <div class="pred-confidence-bar">
+      <span class="conf-label">Confidence</span>
+      <div class="conf-bar-bg"><div class="conf-bar-fill" id="confBar" style="width:0%"></div></div>
+      <span class="conf-pct" id="confPct">—</span>
+    </div>
+    <div class="pred-detail" id="predDetail">Log 10+ rounds to activate predictions</div>
+    <div id="trustBadge"></div>
+  </div>
+
+  <!-- INPUT -->
+  <div class="input-section">
+    <div class="section-title">What did the computer just play?</div>
+    <div class="move-buttons">
+      <button class="move-btn rock" onclick="selectMove('rock')">
+        <span class="emoji">✊</span>ROCK
+      </button>
+      <button class="move-btn paper" onclick="selectMove('paper')">
+        <span class="emoji">✋</span>PAPER
+      </button>
+      <button class="move-btn scissors" onclick="selectMove('scissors')">
+        <span class="emoji">✌️</span>SCISSORS
+      </button>
+    </div>
+    <div class="outcome-row">
+      <span class="outcome-label">YOUR RESULT:</span>
+      <button class="outcome-btn win" onclick="selectOutcome('win')">WIN</button>
+      <button class="outcome-btn lose" onclick="selectOutcome('lose')">LOSE</button>
+      <button class="outcome-btn tie" onclick="selectOutcome('tie')">TIE</button>
+      <button class="log-btn" id="logBtn" onclick="logRound()" disabled>LOG ROUND</button>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-grid">
+
+    <!-- Win Rate -->
+    <div class="stat-card">
+      <div class="section-title">Win Rate</div>
+      <div class="winrate-big" id="winRateNum">0%</div>
+      <div class="winrate-sub" id="winRateSub">0 rounds played</div>
+      <div class="wlt-row">
+        <div class="wlt-item w"><div class="wlt-val" id="wCount">0</div><div class="wlt-lab">Wins</div></div>
+        <div class="wlt-item l"><div class="wlt-val" id="lCount">0</div><div class="wlt-lab">Losses</div></div>
+        <div class="wlt-item t"><div class="wlt-val" id="tCount">0</div><div class="wlt-lab">Ties</div></div>
+      </div>
+    </div>
+
+    <!-- Frequency -->
+    <div class="stat-card">
+      <div class="section-title">Computer Move Frequency</div>
+      <div class="freq-bars">
+        <div class="freq-row">
+          <div class="freq-emoji">✊</div>
+          <div class="freq-label rock">Rock</div>
+          <div class="freq-bar-bg"><div class="freq-bar-fill rock" id="barRock" style="width:0%"></div></div>
+          <div class="freq-pct" id="pctRock">0%</div>
+        </div>
+        <div class="freq-row">
+          <div class="freq-emoji">✋</div>
+          <div class="freq-label paper">Paper</div>
+          <div class="freq-bar-bg"><div class="freq-bar-fill paper" id="barPaper" style="width:0%"></div></div>
+          <div class="freq-pct" id="pctPaper">0%</div>
+        </div>
+        <div class="freq-row">
+          <div class="freq-emoji">✌️</div>
+          <div class="freq-label scissors">Scissors</div>
+          <div class="freq-bar-bg"><div class="freq-bar-fill scissors" id="barScissors" style="width:0%"></div></div>
+          <div class="freq-pct" id="pctScissors">0%</div>
+        </div>
+      </div>
+      <div class="recency-row">
+        <div class="recency-dot"></div>
+        <span id="recencyNote">Using equal weighting — need more data for recency bias</span>
+      </div>
+    </div>
+
+    <!-- Chi-Square -->
+    <div class="stat-card">
+      <div class="section-title">Pattern Strength (Chi-Square Test)</div>
+      <div class="chi-result">
+        <div class="chi-score" id="chiScore">—</div>
+        <div class="chi-verdict">
+          <div class="chi-verdict-text" id="chiVerdict">Not enough data</div>
+          <div class="chi-verdict-sub" id="chiSub">Need 10+ rounds</div>
+        </div>
+      </div>
+      <div class="chi-bar-bg"><div class="chi-bar-fill" id="chiBar" style="width:0%"></div></div>
+      <div class="chi-desc" id="chiDesc">This test measures whether the computer's behavior is truly random or has exploitable patterns. Higher = more predictable.</div>
+    </div>
+
+    <!-- Streak -->
+    <div class="stat-card">
+      <div class="section-title">Streak Detection</div>
+      <div class="streak-display">
+        <div class="streak-num" id="streakNum" style="color:var(--muted)">0×</div>
+        <div class="streak-move" id="streakMove" style="color:var(--muted)">—</div>
+      </div>
+      <div class="streak-warning normal" id="streakWarning">No significant streak detected</div>
+    </div>
+
+    <!-- Win/Loss Reaction Patterns -->
+    <div class="stat-card">
+      <div class="section-title">Win/Loss Reaction Patterns</div>
+      <table class="reaction-table">
+        <thead>
+          <tr>
+            <th>After outcome</th>
+            <th class="cell-rock">✊</th>
+            <th class="cell-paper">✋</th>
+            <th class="cell-scissors">✌️</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="color:var(--win)">After Win</td>
+            <td id="r-w-r">—</td><td id="r-w-p">—</td><td id="r-w-s">—</td>
+          </tr>
+          <tr>
+            <td style="color:var(--lose)">After Lose</td>
+            <td id="r-l-r">—</td><td id="r-l-p">—</td><td id="r-l-s">—</td>
+          </tr>
+          <tr>
+            <td style="color:var(--tie)">After Tie</td>
+            <td id="r-t-r">—</td><td id="r-t-p">—</td><td id="r-t-s">—</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Markov Chain -->
+    <div class="stat-card full-card">
+      <div class="section-title">Markov Chain — After Computer Plays X, It Then Plays…</div>
+      <table class="reaction-table">
+        <thead>
+          <tr>
+            <th>Previous Move →</th>
+            <th class="cell-rock">✊ Rock</th>
+            <th class="cell-paper">✋ Paper</th>
+            <th class="cell-scissors">✌️ Scissors</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="cell-rock">After ✊ Rock</td>
+            <td id="m-r-r">—</td><td id="m-r-p">—</td><td id="m-r-s">—</td>
+          </tr>
+          <tr>
+            <td class="cell-paper">After ✋ Paper</td>
+            <td id="m-p-r">—</td><td id="m-p-p">—</td><td id="m-p-s">—</td>
+          </tr>
+          <tr>
+            <td class="cell-scissors">After ✌️ Scissors</td>
+            <td id="m-s-r">—</td><td id="m-s-p">—</td><td id="m-s-s">—</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- HISTORY -->
+  <div class="history-section">
+    <div class="history-header">
+      <div class="section-title" style="margin:0">Round History</div>
+      <button class="clear-btn" onclick="clearAll()">Clear All</button>
+    </div>
+    <div class="history-list" id="historyList">
+      <div class="empty-state">No rounds logged yet — start with small bets and log the computer's moves above.</div>
+    </div>
+  </div>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const state = {
+  history: [],
+  selectedMove: null,
+  selectedOutcome: null,
+  wins: 0, losses: 0, ties: 0
+};
+
+const moves = ['rock','paper','scissors'];
+const counters = { rock:'paper', paper:'scissors', scissors:'rock' };
+const beats = { rock:'scissors', paper:'rock', scissors:'paper' };
+const emoji = { rock:'✊', paper:'✋', scissors:'✌️' };
+const colors = { rock:'var(--rock)', paper:'var(--paper)', scissors:'var(--scissors)' };
+
+function selectMove(m) {
+  state.selectedMove = m;
+  document.querySelectorAll('.move-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelector(`.move-btn.${m}`).classList.add('selected');
+  checkReady();
+}
+
+function selectOutcome(o) {
+  state.selectedOutcome = o;
+  document.querySelectorAll('.outcome-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.outcome-btn.${o}`).classList.add('active');
+  checkReady();
+}
+
+function checkReady() {
+  document.getElementById('logBtn').disabled = !(state.selectedMove && state.selectedOutcome);
+}
+
+function logRound() {
+  const { selectedMove: move, selectedOutcome: outcome } = state;
+  state.history.push({ move, outcome });
+  if (outcome === 'win') state.wins++;
+  else if (outcome === 'lose') state.losses++;
+  else state.ties++;
+
+  state.selectedMove = null;
+  state.selectedOutcome = null;
+  document.querySelectorAll('.move-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('.outcome-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('logBtn').disabled = true;
+
+  updateAll();
+  showToast(move, outcome);
+}
+
+function updateAll() {
+  updatePhase();
+  updateWinRate();
+  updateFrequency();
+  updateMarkov();
+  updateReactionPatterns();
+  updateStreakDetection();
+  updateChiSquare();
+  updatePrediction();
+  updateHistory();
+}
+
+function updatePhase() {
+  const n = state.history.length;
+  document.getElementById('roundCount').textContent = n;
+  const pct = Math.min((n / 50) * 100, 100);
+  document.getElementById('phaseBar').style.width = pct + '%';
+
+  const icon = document.getElementById('phaseIcon');
+  const title = document.getElementById('phaseTitle');
+  const desc = document.getElementById('phaseDesc');
+
+  if (n < 10) {
+    icon.textContent = '📊';
+    title.textContent = 'DATA COLLECTION PHASE';
+    desc.textContent = 'Play small bets and log results to train the predictor. Need 30+ rounds for reliable patterns.';
+  } else if (n < 30) {
+    icon.textContent = '🔍';
+    title.textContent = 'PATTERN DETECTION PHASE';
+    desc.textContent = 'Early patterns emerging. Keep collecting — predictions improve significantly after 30 rounds.';
+  } else if (n < 50) {
+    icon.textContent = '⚡';
+    title.textContent = 'ANALYSIS ACTIVE';
+    desc.textContent = 'Solid data collected. Predictions are becoming reliable. Consider slightly larger bets.';
+  } else {
+    icon.textContent = '🎯';
+    title.textContent = 'FULL PREDICTION MODE';
+    desc.textContent = 'Excellent dataset. All statistical models are operating at peak confidence.';
+  }
+}
+
+function updateWinRate() {
+  const total = state.wins + state.losses + state.ties;
+  const rate = total === 0 ? 0 : Math.round((state.wins / total) * 100);
+  document.getElementById('winRateNum').textContent = rate + '%';
+  document.getElementById('winRateSub').style.color = rate > 40 ? 'var(--win)' : rate > 30 ? 'var(--gold)' : 'var(--lose)';
+  document.getElementById('winRateSub').textContent = total + ' rounds played';
+  document.getElementById('wCount').textContent = state.wins;
+  document.getElementById('lCount').textContent = state.losses;
+  document.getElementById('tCount').textContent = state.ties;
+}
+
+function getWeightedCounts() {
+  // Exponential decay: recent rounds count more
+  const counts = { rock: 0, paper: 0, scissors: 0 };
+  const n = state.history.length;
+  const decay = 0.97; // slight decay per round back
+  state.history.forEach((r, i) => {
+    const weight = Math.pow(decay, n - 1 - i);
+    counts[r.move] += weight;
+  });
+  return counts;
+}
+
+function updateFrequency() {
+  const rawCounts = { rock: 0, paper: 0, scissors: 0 };
+  state.history.forEach(r => rawCounts[r.move]++);
+  const total = state.history.length || 1;
+
+  moves.forEach(m => {
+    const pct = Math.round((rawCounts[m] / total) * 100);
+    document.getElementById(`bar${cap(m)}`).style.width = pct + '%';
+    document.getElementById(`pct${cap(m)}`).textContent = pct + '%';
+  });
+
+  const note = document.getElementById('recencyNote');
+  if (total < 15) {
+    note.textContent = 'Using equal weighting — need more data for recency bias';
+  } else {
+    note.textContent = 'Recency weighting active — recent rounds weighted higher';
+    note.style.color = 'var(--accent2)';
+  }
+}
+
+function buildMarkov() {
+  const markov = {};
+  moves.forEach(a => { markov[a] = { rock: 0, paper: 0, scissors: 0 }; });
+  for (let i = 1; i < state.history.length; i++) {
+    const prev = state.history[i-1].move;
+    const next = state.history[i].move;
+    markov[prev][next]++;
+  }
+  return markov;
+}
+
+function updateMarkov() {
+  const markov = buildMarkov();
+  moves.forEach(prev => {
+    const total = moves.reduce((s, n) => s + markov[prev][n], 0);
+    const maxVal = Math.max(...moves.map(n => markov[prev][n]));
+    moves.forEach(next => {
+      const el = document.getElementById(`m-${prev[0]}-${next[0]}`);
+      if (total === 0) { el.textContent = '—'; el.classList.remove('cell-high'); return; }
+      const pct = Math.round((markov[prev][next] / total) * 100);
+      el.textContent = pct + '%';
+      if (markov[prev][next] === maxVal && maxVal > 0) el.classList.add('cell-high');
+      else el.classList.remove('cell-high');
+    });
+  });
+}
+
+function updateReactionPatterns() {
+  // outcome-based: after computer wins/loses/ties, what does it play?
+  const reaction = { win: {rock:0,paper:0,scissors:0}, lose: {rock:0,paper:0,scissors:0}, tie: {rock:0,paper:0,scissors:0} };
+  for (let i = 1; i < state.history.length; i++) {
+    const prevOutcome = state.history[i-1].outcome;
+    const nextMove = state.history[i].move;
+    // outcome from computer's perspective: if user won, computer lost
+    let compOutcome = prevOutcome === 'win' ? 'lose' : prevOutcome === 'lose' ? 'win' : 'tie';
+    reaction[compOutcome][nextMove]++;
+  }
+
+  ['win','lose','tie'].forEach(o => {
+    const total = moves.reduce((s, m) => s + reaction[o][m], 0);
+    const maxVal = Math.max(...moves.map(m => reaction[o][m]));
+    moves.forEach(m => {
+      const el = document.getElementById(`r-${o[0]}-${m[0]}`);
+      if (total === 0) { el.textContent = '—'; el.classList.remove('cell-high'); return; }
+      const pct = Math.round((reaction[o][m] / total) * 100);
+      el.textContent = pct + '%';
+      if (reaction[o][m] === maxVal && maxVal > 0) el.classList.add('cell-high');
+      else el.classList.remove('cell-high');
+    });
+  });
+}
+
+function updateStreakDetection() {
+  const h = state.history;
+  if (h.length < 2) return;
+
+  let streak = 1;
+  const lastMove = h[h.length-1].move;
+  for (let i = h.length-2; i >= 0; i--) {
+    if (h[i].move === lastMove) streak++;
+    else break;
+  }
+
+  const numEl = document.getElementById('streakNum');
+  const moveEl = document.getElementById('streakMove');
+  const warnEl = document.getElementById('streakWarning');
+
+  numEl.textContent = streak + '×';
+  numEl.style.color = streak >= 3 ? 'var(--gold)' : 'var(--muted)';
+  moveEl.textContent = emoji[lastMove] + ' ' + lastMove.toUpperCase();
+  moveEl.style.color = colors[lastMove];
+
+  if (streak >= 3) {
+    warnEl.className = 'streak-warning alert';
+    warnEl.textContent = `⚠️ ${streak}-round ${lastMove} streak! Consider playing ${counters[lastMove].toUpperCase()} — streak break likely`;
+  } else {
+    warnEl.className = 'streak-warning normal';
+    warnEl.textContent = 'No significant streak — no streak-break adjustment needed';
+  }
+}
+
+function updateChiSquare() {
+  const n = state.history.length;
+  if (n < 10) return;
+
+  const counts = { rock: 0, paper: 0, scissors: 0 };
+  state.history.forEach(r => counts[r.move]++);
+  const expected = n / 3;
+  let chi = 0;
+  moves.forEach(m => {
+    chi += Math.pow(counts[m] - expected, 2) / expected;
+  });
+
+  const chiRounded = chi.toFixed(2);
+  document.getElementById('chiScore').textContent = chiRounded;
+
+  // Chi-square critical values: df=2, p=0.05 → 5.99, p=0.01 → 9.21
+  let verdict, sub, cls, barPct;
+  if (chi < 2) {
+    verdict = 'Appears Random'; sub = 'No exploitable pattern yet'; cls = 'pattern-random'; barPct = 15;
+  } else if (chi < 5.99) {
+    verdict = 'Weak Pattern'; sub = 'Some bias — keep collecting'; cls = 'pattern-weak'; barPct = 45;
+  } else if (chi < 9.21) {
+    verdict = 'Real Pattern (95%)'; sub = 'Statistically significant!'; cls = 'pattern-strong'; barPct = 75;
+  } else {
+    verdict = 'Strong Pattern (99%)'; sub = 'Highly predictable — trust predictions!'; cls = 'pattern-strong'; barPct = 95;
+  }
+
+  document.getElementById('chiVerdict').textContent = verdict;
+  document.getElementById('chiVerdict').className = `chi-verdict-text ${cls}`;
+  document.getElementById('chiSub').textContent = sub;
+  document.getElementById('chiBar').style.width = barPct + '%';
+
+  const desc = chi >= 5.99
+    ? '✅ Pattern confirmed — the computer is NOT behaving randomly. Your predictions are statistically trustworthy.'
+    : chi >= 2
+    ? '⚠️ Weak signal detected. Log more rounds to confirm whether patterns are real or noise.'
+    : '❌ Computer appears random so far. No strategy will have edge until patterns emerge.';
+  document.getElementById('chiDesc').textContent = desc;
+}
+
+function updatePrediction() {
+  const h = state.history;
+  if (h.length < 10) {
+    document.getElementById('predDetail').textContent = `Log ${10 - h.length} more round${10-h.length>1?'s':''} to activate predictions`;
+    document.getElementById('trustBadge').innerHTML = '';
+    document.getElementById('confPct').textContent = '—';
+    document.getElementById('confBar').style.width = '0%';
+    return;
+  }
+
+  // 1. Markov (1st order)
+  const markov = buildMarkov();
+  const lastMove = h[h.length-1].move;
+  const markovProbs = markov[lastMove];
+  const markovTotal = moves.reduce((s, m) => s + markovProbs[m], 0);
+
+  // 2. Overall frequency (recency weighted)
+  const weighted = getWeightedCounts();
+  const weightTotal = moves.reduce((s, m) => s + weighted[m], 0);
+
+  // 3. Reaction pattern
+  const lastOutcome = h[h.length-1].outcome;
+  const compLastOutcome = lastOutcome === 'win' ? 'lose' : lastOutcome === 'lose' ? 'win' : 'tie';
+  const reaction = { win:{rock:0,paper:0,scissors:0}, lose:{rock:0,paper:0,scissors:0}, tie:{rock:0,paper:0,scissors:0} };
+  for (let i = 1; i < h.length; i++) {
+    const prevComp = h[i-1].outcome === 'win' ? 'lose' : h[i-1].outcome === 'lose' ? 'win' : 'tie';
+    reaction[prevComp][h[i].move]++;
+  }
+  const reactTotal = moves.reduce((s, m) => s + reaction[compLastOutcome][m], 0);
+
+  // 4. Streak bias
+  let streakBoost = { rock:0, paper:0, scissors:0 };
+  let streak = 1;
+  const lm = h[h.length-1].move;
+  for (let i = h.length-2; i >= 0; i--) {
+    if (h[i].move === lm) streak++;
+    else break;
+  }
+  if (streak >= 3) {
+    // Boost the counter of the streak move (expect streak break)
+    moves.forEach(m => { streakBoost[m] = (m === lm) ? -0.1 : (m === counters[lm] ? 0.1 : 0); });
+  }
+
+  // Combine all signals
+  const n = h.length;
+  const markovW = Math.min(n / 50, 0.5);
+  const reactW = Math.min(n / 80, 0.2);
+  const freqW = Math.max(0.3 - n/200, 0.1);
+  const streakW = streak >= 3 ? 0.15 : 0;
+  const normalizeW = markovW + reactW + freqW + streakW;
+
+  const combined = {};
+  moves.forEach(m => {
+    const mP = markovTotal > 0 ? markovProbs[m] / markovTotal : 1/3;
+    const fP = weighted[m] / weightTotal;
+    const rP = reactTotal > 0 ? reaction[compLastOutcome][m] / reactTotal : 1/3;
+    combined[m] = ((mP * markovW) + (fP * freqW) + (rP * reactW)) / (markovW + freqW + reactW) + streakBoost[m];
+  });
+
+  // Normalize
+  const combTotal = moves.reduce((s, m) => s + Math.max(combined[m], 0), 0);
+  moves.forEach(m => combined[m] = Math.max(combined[m], 0) / combTotal);
+
+  const predictedComp = moves.reduce((a, b) => combined[a] > combined[b] ? a : b);
+  const recommended = counters[predictedComp];
+  const confidence = Math.round(combined[predictedComp] * 100);
+
+  // Update UI
+  document.getElementById('predCompEmoji').textContent = emoji[predictedComp];
+  document.getElementById('predCompName').textContent = `Computer likely: ${predictedComp.toUpperCase()}`;
+  document.getElementById('predCompName').style.color = colors[predictedComp];
+
+  document.getElementById('predPlayEmoji').textContent = emoji[recommended];
+  document.getElementById('predPlayName').textContent = `YOU PLAY: ${recommended.toUpperCase()}`;
+  document.getElementById('predPlayName').style.color = colors[recommended];
+
+  document.getElementById('confBar').style.width = confidence + '%';
+  document.getElementById('confPct').textContent = confidence + '%';
+
+  const signals = [];
+  if (markovW > 0.3) signals.push('Markov');
+  if (reactW > 0.1) signals.push('Reaction');
+  if (streak >= 3) signals.push('Streak');
+  signals.push('Frequency');
+
+  document.getElementById('predDetail').innerHTML =
+    `Signals used: <span>${signals.join(' + ')}</span> · ${h.length} rounds analyzed`;
+
+  // Trust badge
+  let trustClass, trustText;
+  if (h.length < 20 || confidence < 45) { trustClass = 'trust-low'; trustText = '⚠ LOW CONFIDENCE — keep logging'; }
+  else if (h.length < 40 || confidence < 55) { trustClass = 'trust-med'; trustText = '~ MODERATE CONFIDENCE'; }
+  else { trustClass = 'trust-high'; trustText = '✓ HIGH CONFIDENCE'; }
+
+  document.getElementById('trustBadge').innerHTML = `<div class="trust-badge ${trustClass}">${trustText}</div>`;
+}
+
+function updateHistory() {
+  const list = document.getElementById('historyList');
+  if (state.history.length === 0) {
+    list.innerHTML = '<div class="empty-state">No rounds logged yet — start with small bets and log the computer\'s moves above.</div>';
+    return;
+  }
+  list.innerHTML = [...state.history].reverse().map((r, i) => {
+    const num = state.history.length - i;
+    return `<div class="history-chip ${r.outcome}">#${num} ${emoji[r.move]} ${r.move.toUpperCase()} · ${r.outcome.toUpperCase()}</div>`;
+  }).join('');
+}
+
+function showToast(move, outcome) {
+  const msgs = { win: `✅ Win logged — computer played ${move}`, lose: `❌ Loss logged — computer played ${move}`, tie: `🤝 Tie logged — computer played ${move}` };
+  const toast = document.getElementById('toast');
+  toast.textContent = msgs[outcome];
+  toast.className = `toast ${outcome}-toast show`;
+  setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+function clearAll() {
+  if (!state.history.length) return;
+  if (!confirm('Clear all data and start fresh?')) return;
+  state.history = [];
+  state.wins = state.losses = state.ties = 0;
+  state.selectedMove = state.selectedOutcome = null;
+  document.querySelectorAll('.move-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('.outcome-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('logBtn').disabled = true;
+  updateAll();
+}
+
+function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+</script>
+</body>
+</html>
